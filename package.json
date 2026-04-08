@@ -1,0 +1,24 @@
+{
+  "name": "claireco",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "http://local_proxy@127.0.0.1:43233/git/arnaudgrunwald0404/claireco"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@zapier/zapier-sdk": "^0.40.1"
+  },
+  "devDependencies": {
+    "@types/node": "^25.5.2",
+    "@zapier/zapier-sdk-cli": "^0.39.1",
+    "typescript": "^6.0.2"
+  }
+}
