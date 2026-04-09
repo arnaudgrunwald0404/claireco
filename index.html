@@ -1,0 +1,1619 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ClaireCo — Tell us what's slowing you down</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,600;1,400&family=IBM+Plex+Sans:wght@300;400;500&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    /* ── Design System ────────────────────────────────── */
+    :root {
+      --bg:       #0F0F0F;
+      --surface:  #1A1A1A;
+      --surface2: #242424;
+      --surface3: #2E2E2E;
+      --border:   #333333;
+      --ink:      #F0EDE8;
+      --ink2:     #A09890;
+      --ink3:     #5C5550;
+      --accent:   #E8A87C;
+      --accent2:  #C84B31;
+      --match:    #4CAF82;
+      --match-bg: #0D2B1E;
+      --new:      #7B9FE8;
+      --new-bg:   #0D1829;
+      --font-display: 'Lora', serif;
+      --font-body:    'IBM Plex Sans', sans-serif;
+      --font-mono:    'IBM Plex Mono', monospace;
+      --radius:   16px;
+      --radius-sm: 8px;
+    }
+
+    /* ── Reset ────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; overflow: hidden; }
+    body {
+      background: var(--bg);
+      color: var(--ink);
+      font-family: var(--font-body);
+      font-size: 15px;
+      line-height: 1.65;
+      -webkit-font-smoothing: antialiased;
+    }
+    button { cursor: pointer; border: none; background: none; font: inherit; color: inherit; }
+    textarea { font: inherit; color: inherit; resize: none; border: none; outline: none; background: none; }
+
+    /* ── Screens ──────────────────────────────────────── */
+    .screen { height: 100vh; display: flex; flex-direction: column; }
+    .screen[hidden] { display: none; }
+
+    /* ── Animations ───────────────────────────────────── */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(12px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes matchReveal {
+      from { opacity: 0; transform: translateY(8px) scale(0.98); }
+      to   { opacity: 1; transform: translateY(0) scale(1); }
+    }
+    @keyframes dot {
+      0%, 60%, 100% { transform: translateY(0); opacity: 0.35; }
+      30%            { transform: translateY(-4px); opacity: 1; }
+    }
+    @keyframes pulse-ring {
+      0%   { transform: scale(1); opacity: 0.6; }
+      100% { transform: scale(1.6); opacity: 0; }
+    }
+    .fade-up { animation: fadeUp 0.35s ease both; }
+
+    /* ════════════════════════════════════════════════════
+       WELCOME SCREEN
+    ════════════════════════════════════════════════════ */
+    #screen-welcome {
+      overflow-y: auto;
+      justify-content: center;
+      align-items: center;
+      padding: 40px 24px 60px;
+    }
+    .welcome-wrap {
+      width: 100%;
+      max-width: 540px;
+      margin: 0 auto;
+      animation: fadeUp 0.5s ease both;
+    }
+
+    /* Logo */
+    .logo {
+      font-family: var(--font-display);
+      font-size: 22px;
+      font-weight: 600;
+      color: var(--ink);
+      letter-spacing: -0.5px;
+      margin-bottom: 48px;
+    }
+    .logo em {
+      color: var(--ink3);
+      font-style: normal;
+    }
+
+    /* Hero */
+    .welcome-hero {
+      font-family: var(--font-display);
+      font-size: clamp(36px, 6vw, 52px);
+      font-weight: 600;
+      line-height: 1.15;
+      color: var(--ink);
+      margin-bottom: 16px;
+    }
+    .welcome-sub {
+      font-size: 15px;
+      color: var(--ink2);
+      font-weight: 300;
+      margin-bottom: 44px;
+      max-width: 400px;
+    }
+
+    /* Department picker */
+    .picker-label {
+      font-size: 11px;
+      font-family: var(--font-mono);
+      color: var(--ink3);
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      margin-bottom: 14px;
+    }
+    .chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 36px;
+    }
+    .chip {
+      padding: 8px 14px;
+      border-radius: 24px;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--ink2);
+      font-size: 13px;
+      font-family: var(--font-body);
+      font-weight: 400;
+      transition: all 0.15s ease;
+      white-space: nowrap;
+    }
+    .chip:hover { background: var(--surface3); color: var(--ink); border-color: var(--surface3); }
+    .chip.selected {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #0F0F0F;
+      font-weight: 500;
+    }
+
+    /* Voice toggle */
+    .voice-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 32px;
+      cursor: pointer;
+      user-select: none;
+    }
+    .voice-row span {
+      font-size: 14px;
+      color: var(--ink2);
+    }
+    .toggle-wrap { position: relative; flex-shrink: 0; }
+    .toggle-wrap input { opacity: 0; width: 0; height: 0; position: absolute; }
+    .toggle-track {
+      display: block;
+      width: 40px;
+      height: 22px;
+      background: var(--surface3);
+      border-radius: 11px;
+      border: 1px solid var(--border);
+      transition: background 0.2s;
+      position: relative;
+    }
+    .toggle-track::after {
+      content: '';
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: var(--ink3);
+      transition: transform 0.2s, background 0.2s;
+    }
+    .toggle-wrap input:checked ~ .toggle-track { background: var(--accent); border-color: var(--accent); }
+    .toggle-wrap input:checked ~ .toggle-track::after { transform: translateX(18px); background: #0F0F0F; }
+
+    /* CTA button */
+    .cta-btn {
+      display: block;
+      width: 100%;
+      background: var(--accent);
+      color: #0F0F0F;
+      border-radius: var(--radius-sm);
+      padding: 15px 32px;
+      font-size: 15px;
+      font-weight: 500;
+      text-align: center;
+      transition: background 0.2s, transform 0.2s, box-shadow 0.2s, opacity 0.2s;
+      margin-bottom: 20px;
+    }
+    .cta-btn:not(:disabled):hover {
+      background: #F0B88C;
+      transform: translateY(-1px);
+      box-shadow: 0 8px 24px rgba(232,168,124,0.25);
+    }
+    .cta-btn:disabled {
+      opacity: 0.35;
+      cursor: not-allowed;
+    }
+    .fine-print {
+      font-size: 12px;
+      color: var(--ink3);
+      text-align: center;
+      line-height: 1.5;
+    }
+
+    /* ════════════════════════════════════════════════════
+       CHAT SCREEN
+    ════════════════════════════════════════════════════ */
+    #screen-chat {
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* Header */
+    .chat-header {
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 20px;
+      border-bottom: 1px solid var(--border);
+      background: var(--bg);
+    }
+    .header-l { display: flex; align-items: center; gap: 10px; }
+    .logo-sm {
+      font-family: var(--font-display);
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--ink);
+    }
+    .logo-sm em { color: var(--ink3); font-style: normal; }
+    .dept-pill {
+      font-size: 11px;
+      font-family: var(--font-mono);
+      color: var(--accent);
+      background: rgba(232,168,124,0.12);
+      border: 1px solid rgba(232,168,124,0.25);
+      border-radius: 12px;
+      padding: 3px 10px;
+      letter-spacing: 0.3px;
+    }
+    .header-r { display: flex; align-items: center; gap: 8px; }
+    .icon-btn {
+      width: 32px;
+      height: 32px;
+      border-radius: var(--radius-sm);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--ink3);
+      transition: color 0.15s, background 0.15s;
+    }
+    .icon-btn:hover { color: var(--ink); background: var(--surface2); }
+    .icon-btn.active { color: var(--accent); }
+    .link-btn {
+      font-size: 13px;
+      color: var(--ink3);
+      text-decoration: none;
+      padding: 4px 8px;
+      border-radius: 6px;
+      transition: color 0.15s, background 0.15s;
+    }
+    .link-btn:hover { color: var(--ink); background: var(--surface2); }
+
+    /* Confidence banner */
+    .conf-banner {
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 20px;
+      background: var(--surface2);
+      border-bottom: 1px solid var(--border);
+      transition: all 0.3s ease;
+    }
+    .conf-banner[hidden] { display: none; }
+    .conf-label {
+      font-size: 11px;
+      font-family: var(--font-mono);
+      color: var(--ink3);
+      white-space: nowrap;
+    }
+    .conf-track {
+      flex: 1;
+      height: 3px;
+      background: var(--surface3);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+    .conf-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent), var(--match));
+      border-radius: 2px;
+      width: 0%;
+      transition: width 0.8s ease;
+    }
+    .conf-pct {
+      font-size: 11px;
+      font-family: var(--font-mono);
+      color: var(--ink3);
+      min-width: 32px;
+      text-align: right;
+    }
+
+    /* Messages area */
+    .messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 24px 20px 8px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      scroll-behavior: smooth;
+    }
+    .messages::-webkit-scrollbar { width: 4px; }
+    .messages::-webkit-scrollbar-track { background: transparent; }
+    .messages::-webkit-scrollbar-thumb { background: var(--surface3); border-radius: 2px; }
+
+    /* Message rows */
+    .msg {
+      display: flex;
+      gap: 10px;
+      animation: fadeUp 0.3s ease both;
+    }
+    .msg-claire { align-items: flex-start; }
+    .msg-user   { align-items: flex-start; justify-content: flex-end; }
+
+    /* Avatar */
+    .avatar {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--font-display);
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--accent);
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+
+    /* Bubbles */
+    .bubble {
+      padding: 13px 18px;
+      border-radius: var(--radius);
+      max-width: 82%;
+      font-size: 15px;
+      line-height: 1.65;
+      word-break: break-word;
+    }
+    .bubble-claire {
+      background: var(--surface);
+      color: var(--ink);
+      border: 1px solid var(--border);
+      border-bottom-left-radius: 4px;
+    }
+    .bubble-user {
+      background: var(--accent);
+      color: #0F0F0F;
+      border-bottom-right-radius: 4px;
+    }
+
+    /* Typing indicator */
+    .typing-dots {
+      display: flex;
+      gap: 4px;
+      align-items: center;
+      height: 20px;
+    }
+    .typing-dots span {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--ink3);
+      animation: dot 1.2s ease infinite;
+    }
+    .typing-dots span:nth-child(2) { animation-delay: 0.2s; }
+    .typing-dots span:nth-child(3) { animation-delay: 0.4s; }
+
+    /* Special message cards */
+    .msg-card {
+      animation: matchReveal 0.5s ease both;
+      border-radius: var(--radius);
+      padding: 20px;
+      width: 100%;
+      max-width: 480px;
+    }
+    .msg-special { justify-content: flex-start; padding-left: 38px; }
+
+    /* Match card */
+    .match-card {
+      background: var(--match-bg);
+      border: 1px solid var(--match);
+    }
+    .match-card .card-eyebrow {
+      font-size: 10px;
+      font-family: var(--font-mono);
+      color: var(--match);
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .match-card .card-eyebrow::before {
+      content: '';
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--match);
+      display: inline-block;
+    }
+    .match-card .card-title {
+      font-family: var(--font-display);
+      font-size: 17px;
+      font-weight: 600;
+      color: var(--ink);
+      margin-bottom: 8px;
+    }
+    .match-card .card-desc {
+      font-size: 14px;
+      color: var(--ink2);
+      line-height: 1.6;
+      margin-bottom: 18px;
+    }
+    .card-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+    .btn-confirm {
+      background: var(--match);
+      color: #0A1F13;
+      padding: 9px 18px;
+      border-radius: var(--radius-sm);
+      font-size: 14px;
+      font-weight: 500;
+      transition: opacity 0.15s;
+    }
+    .btn-confirm:hover { opacity: 0.85; }
+    .btn-deny {
+      background: transparent;
+      color: var(--ink2);
+      padding: 9px 18px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border);
+      font-size: 14px;
+      transition: color 0.15s, border-color 0.15s;
+    }
+    .btn-deny:hover { color: var(--ink); border-color: var(--ink3); }
+
+    /* Confirmed match (collapsed state) */
+    .match-card.confirmed .card-actions { display: none; }
+    .match-card.confirmed .card-eyebrow::before { background: var(--match); }
+    .confirmed-note {
+      display: none;
+      font-size: 13px;
+      color: var(--match);
+      margin-top: 8px;
+    }
+    .match-card.confirmed .confirmed-note { display: block; }
+
+    /* New use case card */
+    .new-card {
+      background: var(--new-bg);
+      border: 1px solid var(--new);
+    }
+    .new-card .card-eyebrow {
+      font-size: 10px;
+      font-family: var(--font-mono);
+      color: var(--new);
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .new-card .card-eyebrow::before {
+      content: '';
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--new);
+      display: inline-block;
+    }
+    .new-card .card-title {
+      font-family: var(--font-display);
+      font-size: 17px;
+      font-weight: 600;
+      color: var(--ink);
+      margin-bottom: 8px;
+    }
+    .new-card .card-desc {
+      font-size: 14px;
+      color: var(--ink2);
+      line-height: 1.6;
+      margin-bottom: 16px;
+    }
+    .btn-brief {
+      background: var(--new);
+      color: #0A1320;
+      padding: 9px 18px;
+      border-radius: var(--radius-sm);
+      font-size: 14px;
+      font-weight: 500;
+      transition: opacity 0.15s;
+    }
+    .btn-brief:hover { opacity: 0.85; }
+    .btn-brief:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    /* PRD card */
+    .prd-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+    }
+    .prd-card .card-eyebrow {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+    }
+    .prd-ref {
+      font-size: 10px;
+      font-family: var(--font-mono);
+      color: var(--ink3);
+      text-transform: uppercase;
+      letter-spacing: 2px;
+    }
+    .prd-tag {
+      font-size: 10px;
+      font-family: var(--font-mono);
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      padding: 3px 8px;
+      border-radius: 4px;
+    }
+    .prd-tag.known { color: var(--match); background: rgba(76,175,130,0.15); border: 1px solid rgba(76,175,130,0.3); }
+    .prd-tag.new   { color: var(--new);   background: rgba(123,159,232,0.15); border: 1px solid rgba(123,159,232,0.3); }
+    .prd-fields { display: flex; flex-direction: column; gap: 12px; margin-bottom: 18px; }
+    .prd-field { display: grid; grid-template-columns: 120px 1fr; gap: 8px; }
+    .field-label {
+      font-size: 11px;
+      font-family: var(--font-mono);
+      color: var(--ink3);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      padding-top: 2px;
+    }
+    .field-val {
+      font-size: 14px;
+      color: var(--ink);
+      line-height: 1.5;
+    }
+    .field-val.systems { display: flex; flex-wrap: wrap; gap: 6px; }
+    .system-tag {
+      font-size: 12px;
+      font-family: var(--font-mono);
+      color: var(--ink2);
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      padding: 2px 8px;
+      border-radius: 4px;
+    }
+    .prd-divider {
+      border: none;
+      border-top: 1px solid var(--border);
+      margin: 16px 0;
+    }
+    .prd-meta-row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 16px;
+    }
+    .meta-badge {
+      font-size: 10px;
+      font-family: var(--font-mono);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      padding: 3px 8px;
+      border-radius: 4px;
+    }
+    .meta-badge.ready_to_build { color: var(--match); background: rgba(76,175,130,0.12); border: 1px solid rgba(76,175,130,0.25); }
+    .meta-badge.needs_followup { color: var(--accent); background: rgba(232,168,124,0.12); border: 1px solid rgba(232,168,124,0.25); }
+    .meta-badge.exploratory    { color: var(--new);   background: rgba(123,159,232,0.12); border: 1px solid rgba(123,159,232,0.25); }
+    .meta-badge.high   { color: var(--match); background: rgba(76,175,130,0.12); border: 1px solid rgba(76,175,130,0.25); }
+    .meta-badge.medium { color: var(--accent); background: rgba(232,168,124,0.12); border: 1px solid rgba(232,168,124,0.25); }
+    .meta-badge.low    { color: var(--ink3); background: var(--surface2); border: 1px solid var(--border); }
+    .prd-actions { display: flex; gap: 10px; }
+    .btn-copy {
+      padding: 9px 18px;
+      border-radius: var(--radius-sm);
+      font-size: 14px;
+      font-weight: 500;
+      background: var(--surface2);
+      color: var(--ink);
+      border: 1px solid var(--border);
+      transition: background 0.15s, color 0.15s;
+    }
+    .btn-copy:hover { background: var(--surface3); }
+    .btn-copy.copied { color: var(--match); border-color: var(--match); }
+    .btn-submit-brief {
+      padding: 9px 18px;
+      border-radius: var(--radius-sm);
+      font-size: 14px;
+      font-weight: 500;
+      background: var(--accent);
+      color: #0F0F0F;
+      transition: opacity 0.15s;
+    }
+    .btn-submit-brief:hover { opacity: 0.85; }
+    .btn-submit-brief.submitted { background: var(--match); color: #0A1F13; }
+
+    /* Input area */
+    .input-area {
+      flex-shrink: 0;
+      padding: 12px 16px 16px;
+      border-top: 1px solid var(--border);
+      background: var(--bg);
+    }
+    .input-row {
+      display: flex;
+      align-items: flex-end;
+      gap: 8px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 8px 8px 8px 16px;
+      transition: border-color 0.2s;
+    }
+    .input-row:focus-within { border-color: var(--ink3); }
+    #input {
+      flex: 1;
+      background: transparent;
+      color: var(--ink);
+      font-size: 16px; /* 16px prevents iOS zoom */
+      line-height: 1.5;
+      max-height: 120px;
+      overflow-y: auto;
+      padding: 4px 0;
+    }
+    #input::placeholder { color: var(--ink3); }
+    .mic-btn, .send-btn {
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      transition: all 0.15s;
+    }
+    .send-btn {
+      background: var(--accent);
+      color: #0F0F0F;
+    }
+    .send-btn:hover { background: #F0B88C; }
+    .send-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    .mic-btn {
+      background: var(--surface3);
+      color: var(--ink2);
+      position: relative;
+    }
+    .mic-btn:hover { background: var(--surface3); color: var(--ink); }
+    .mic-btn.listening {
+      background: var(--accent2);
+      color: #fff;
+    }
+    .mic-btn.listening::before {
+      content: '';
+      position: absolute;
+      inset: -2px;
+      border-radius: 10px;
+      border: 2px solid var(--accent2);
+      animation: pulse-ring 1.2s ease-out infinite;
+    }
+    .input-hint {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 6px 4px 0;
+      font-size: 11px;
+      font-family: var(--font-mono);
+      color: var(--ink3);
+    }
+    .listen-status {
+      color: var(--accent2);
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .listen-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--accent2);
+      animation: dot 1.2s ease infinite;
+    }
+
+    /* ── Responsive ────────────────────────────────── */
+    @media (max-width: 600px) {
+      #screen-welcome { padding: 32px 20px 48px; }
+      .welcome-hero { font-size: 32px; }
+      .bubble { max-width: 92%; }
+      .prd-field { grid-template-columns: 1fr; gap: 3px; }
+      .field-label { padding-top: 0; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════════
+     WELCOME SCREEN
+════════════════════════════════════════════════════ -->
+<div id="screen-welcome" class="screen">
+  <div class="welcome-wrap">
+
+    <div class="logo">claire<em>co</em></div>
+
+    <h1 class="welcome-hero">Tell us what's<br>slowing you down.</h1>
+    <p class="welcome-sub">A quick conversation to help us build the right tools for your team. No forms, no jargon — just tell us what's annoying.</p>
+
+    <p class="picker-label">What team are you on?</p>
+    <div class="chips" id="dept-chips"></div>
+
+    <label class="voice-row" id="voice-row">
+      <div class="toggle-wrap">
+        <input type="checkbox" id="voice-check" checked>
+        <span class="toggle-track"></span>
+      </div>
+      <span>Talk to Claire using your microphone</span>
+    </label>
+
+    <button class="cta-btn" id="cta-btn" disabled>Start talking to Claire</button>
+    <p class="fine-print">Your conversation stays within ClearCompany and is only used to inform what gets built.</p>
+
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════
+     CHAT SCREEN
+════════════════════════════════════════════════════ -->
+<div id="screen-chat" class="screen" hidden>
+
+  <header class="chat-header">
+    <div class="header-l">
+      <span class="logo-sm">claire<em>co</em></span>
+      <span class="dept-pill" id="dept-pill"></span>
+    </div>
+    <div class="header-r">
+      <button class="icon-btn active" id="btn-voice-out" title="Toggle Claire's voice">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+          <path d="M19.07 4.93a10 10 0 0 1 0 14.14"/>
+          <path d="M15.54 8.46a5 5 0 0 1 0 7.07"/>
+        </svg>
+      </button>
+      <button class="link-btn" id="btn-reset">Start over</button>
+    </div>
+  </header>
+
+  <div class="conf-banner" id="conf-banner" hidden>
+    <span class="conf-label">Scanning library</span>
+    <div class="conf-track">
+      <div class="conf-fill" id="conf-fill"></div>
+    </div>
+    <span class="conf-pct" id="conf-pct">0%</span>
+  </div>
+
+  <div class="messages" id="messages" role="log" aria-live="polite" aria-label="Conversation with Claire"></div>
+
+  <div class="input-area">
+    <div class="input-row">
+      <textarea id="input" placeholder="Tell Claire what's on your mind..." rows="1" aria-label="Your message"></textarea>
+      <button class="mic-btn" id="btn-mic" aria-label="Use microphone" title="Click to speak" hidden>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+          <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+          <line x1="12" y1="19" x2="12" y2="23"/>
+          <line x1="8" y1="23" x2="16" y2="23"/>
+        </svg>
+      </button>
+      <button class="send-btn" id="btn-send" aria-label="Send message" disabled>
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="22" y1="2" x2="11" y2="13"/>
+          <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+        </svg>
+      </button>
+    </div>
+    <div class="input-hint">
+      <span>Enter to send · Shift+Enter for new line</span>
+      <span class="listen-status" id="listen-status" hidden>
+        <span class="listen-dot"></span> Listening
+      </span>
+    </div>
+  </div>
+
+</div>
+
+<script>
+/* ════════════════════════════════════════════════════
+   CONFIG
+════════════════════════════════════════════════════ */
+const MATCH_THRESHOLD = 0.30;         // Keyword score to surface match card
+const DISPLAY_THRESHOLD = 0.12;       // Score to show confidence bar
+const PATH_C_AFTER = 6;               // User messages before Path C
+const DEPT_WEIGHT = 2.0;              // Score multiplier for same-dept use cases
+const SPEAKER_ON_SVG = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>`;
+const SPEAKER_OFF_SVG = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg>`;
+
+const CLAIRE_SYSTEM_PROMPT = `You are Claire, an internal assistant at ClearCompany. Your job is to have a natural conversation with an employee to understand a work problem they want help with.
+
+CRITICAL RULES:
+- Ask ONE question per message. Never two.
+- Keep responses to 1-3 sentences maximum.
+- Never use technical words: no "AI", "agent", "automation", "API", "workflow", "orchestration", "LLM", "ML".
+- Never mention ClaireCo or that you are an AI unless directly asked.
+- Do not summarize what the user said back to them before asking your question.
+- Do not use filler phrases like "Great!", "Absolutely!", "That makes sense!", "Of course!".
+- Sound like a thoughtful colleague, not a customer service bot.
+
+YOUR GOAL:
+Understand the employee's work pain deeply enough to describe it clearly to someone who will build a solution. By the end of the conversation you should know:
+1. What the painful task actually is (specific, concrete)
+2. How often it happens
+3. What tools/systems are involved
+4. How many people are affected
+5. What a good outcome looks like
+
+CONVERSATION FLOW:
+- Start by asking what is slowing them down or what they wish just happened automatically.
+- Follow the most interesting thread. If they mention something specific, ask about that.
+- After 4-5 exchanges, you will be given a signal in the system context if a use case match has been found. If so, surface it naturally: "This is reminding me of something I have heard before — [describe it simply]. Does that sound like your situation?"
+- If they confirm the match, wrap up warmly and tell them you will put together a brief.
+- If they say no, ask what is different and keep going.
+- After 6-7 exchanges with no match, wrap up by saying this sounds like something new and that you want to make sure you capture it properly.
+
+WRAPPING UP:
+When you have enough information (or after 6-7 exchanges), say something like:
+"I think I have a good picture of this now. Let me put together a brief for the team — they will follow up with you within the week."
+
+Never say goodbye or "have a great day." End naturally.
+
+DEPARTMENT CONTEXT:
+The employee works in: {DEPARTMENT}
+Use this to ask more relevant follow-up questions.
+
+{MATCH_CONTEXT}`;
+
+const OPENING_LINES = [
+  "Hey! What's been taking up more of your time lately than it should?",
+  "Hi there — what's the thing you keep doing that you wish just happened on its own?",
+  "Hey! Tell me about something in your week that you always dread.",
+  "What's the most repetitive part of your job right now?",
+  "Hi! If you could make one thing at work just disappear from your to-do list — what would it be?",
+];
+
+const DEPARTMENTS = [
+  { label: 'Talent Acquisition', fn: 'Talent Acquisition' },
+  { label: 'HR / People Ops',    fn: 'HR / People Operations' },
+  { label: 'Learning & Dev',     fn: 'Learning & Development' },
+  { label: 'Customer Success',   fn: 'Customer Success' },
+  { label: 'Sales / Revenue',    fn: 'Sales / Revenue' },
+  { label: 'Sales Enablement',   fn: 'Sales Enablement' },
+  { label: 'Product',            fn: 'Product Management' },
+  { label: 'UX / Design',        fn: 'UX / Design' },
+  { label: 'Engineering',        fn: 'Engineering' },
+  { label: 'Product Marketing',  fn: 'Product Marketing' },
+  { label: 'Implementation',     fn: 'Implementation' },
+  { label: 'Finance / RevOps',   fn: 'Finance / RevOps' },
+  { label: 'Legal / Compliance', fn: 'Legal / Compliance' },
+  { label: 'IT / Security',      fn: 'IT / Security' },
+];
+
+/* ════════════════════════════════════════════════════
+   STATE
+════════════════════════════════════════════════════ */
+const state = {
+  department: null,         // { label, fn }
+  messages: [],             // { role: 'user'|'assistant', content }
+  userMsgCount: 0,
+  confidence: 0,
+  matchedUseCase: null,
+  matchState: 'none',       // 'none' | 'surfaced' | 'confirmed' | 'rejected' | 'new'
+  isThinking: false,
+  voiceOutputOn: true,
+  isListening: false,
+  brief: null,
+  msgIdSeq: 0,
+};
+
+let useCases = [];
+let recognition = null;
+
+/* ════════════════════════════════════════════════════
+   DOM REFS
+════════════════════════════════════════════════════ */
+const $welcome     = document.getElementById('screen-welcome');
+const $chat        = document.getElementById('screen-chat');
+const $deptChips   = document.getElementById('dept-chips');
+const $voiceCheck  = document.getElementById('voice-check');
+const $voiceRow    = document.getElementById('voice-row');
+const $ctaBtn      = document.getElementById('cta-btn');
+const $deptPill    = document.getElementById('dept-pill');
+const $confBanner  = document.getElementById('conf-banner');
+const $confFill    = document.getElementById('conf-fill');
+const $confPct     = document.getElementById('conf-pct');
+const $messages    = document.getElementById('messages');
+const $input       = document.getElementById('input');
+const $btnMic      = document.getElementById('btn-mic');
+const $btnSend     = document.getElementById('btn-send');
+const $btnReset    = document.getElementById('btn-reset');
+const $btnVoiceOut = document.getElementById('btn-voice-out');
+const $listenStatus = document.getElementById('listen-status');
+
+/* ════════════════════════════════════════════════════
+   INIT
+════════════════════════════════════════════════════ */
+async function init() {
+  // Load use cases
+  try {
+    const res = await fetch('/use-cases.json');
+    useCases = await res.json();
+  } catch (e) {
+    console.warn('Could not load use-cases.json:', e);
+  }
+
+  // Build department chips
+  DEPARTMENTS.forEach(dept => {
+    const btn = document.createElement('button');
+    btn.className = 'chip';
+    btn.textContent = dept.label;
+    btn.addEventListener('click', () => selectDept(dept, btn));
+    $deptChips.appendChild(btn);
+  });
+
+  // Voice availability
+  initVoice();
+
+  // Input events
+  $input.addEventListener('input', () => {
+    autoResize($input);
+    $btnSend.disabled = !$input.value.trim() || state.isThinking;
+  });
+  $input.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); }
+  });
+  $btnSend.addEventListener('click', handleSend);
+  $btnMic.addEventListener('click', toggleListening);
+  $btnReset.addEventListener('click', resetToWelcome);
+  $btnVoiceOut.addEventListener('click', toggleVoiceOut);
+  $ctaBtn.addEventListener('click', startConversation);
+}
+
+/* ════════════════════════════════════════════════════
+   WELCOME — department selection
+════════════════════════════════════════════════════ */
+function selectDept(dept, chipEl) {
+  document.querySelectorAll('.chip').forEach(c => c.classList.remove('selected'));
+  chipEl.classList.add('selected');
+  state.department = dept;
+  $ctaBtn.disabled = false;
+}
+
+/* ════════════════════════════════════════════════════
+   START CONVERSATION
+════════════════════════════════════════════════════ */
+async function startConversation() {
+  if (!state.department) return;
+
+  // Switch screens
+  $welcome.hidden = true;
+  $chat.hidden = false;
+
+  // Set dept pill
+  $deptPill.textContent = state.department.label;
+
+  // Show mic if available
+  if (recognition) $btnMic.hidden = false;
+
+  // Opening message from Claire (random)
+  const opening = OPENING_LINES[Math.floor(Math.random() * OPENING_LINES.length)];
+  appendClaireMsg(opening);
+  state.messages.push({ role: 'assistant', content: opening });
+
+  // Speak if voice on
+  if (state.voiceOutputOn) speakText(opening);
+
+  $input.focus();
+}
+
+/* ════════════════════════════════════════════════════
+   SEND MESSAGE
+════════════════════════════════════════════════════ */
+async function handleSend() {
+  const text = $input.value.trim();
+  if (!text || state.isThinking) return;
+
+  $input.value = '';
+  autoResize($input);
+  $btnSend.disabled = true;
+
+  // Render user message
+  appendUserMsg(text);
+  state.messages.push({ role: 'user', content: text });
+  state.userMsgCount++;
+
+  // Keyword match
+  const { confidence, useCase } = runKeywordMatch();
+  state.confidence = confidence;
+  updateConfidenceBar(confidence);
+
+  // Decide match injection
+  const shouldSurface = (
+    state.matchState === 'none' &&
+    confidence >= MATCH_THRESHOLD &&
+    state.userMsgCount >= 3
+  );
+
+  // Build system prompt
+  const sys = buildSystemPrompt(shouldSurface ? useCase : null);
+
+  // Stream Claire
+  state.isThinking = true;
+  $btnSend.disabled = true;
+
+  try {
+    const clairesText = await streamClaireResponse(state.messages, sys);
+
+    if (clairesText) {
+      state.messages.push({ role: 'assistant', content: clairesText });
+      if (state.voiceOutputOn) speakText(clairesText);
+    }
+
+    // Show match card after Claire responds
+    if (shouldSurface && state.matchState === 'none') {
+      state.matchState = 'surfaced';
+      state.matchedUseCase = useCase;
+      setTimeout(() => renderMatchCard(useCase), 400);
+    }
+
+    // Path C check
+    if (state.userMsgCount >= PATH_C_AFTER && state.matchState === 'none') {
+      state.matchState = 'new';
+      setTimeout(() => renderNewUseCaseCard(), 400);
+    }
+
+  } catch (err) {
+    console.error('API error:', err);
+    appendClaireMsg("I lost my train of thought for a second — could you say that again?");
+  } finally {
+    state.isThinking = false;
+    $btnSend.disabled = !$input.value.trim();
+  }
+}
+
+/* ════════════════════════════════════════════════════
+   SYSTEM PROMPT
+════════════════════════════════════════════════════ */
+function buildSystemPrompt(matchUseCase) {
+  let matchCtx = '';
+  if (matchUseCase) {
+    matchCtx = `MATCH CONTEXT:
+A likely match has been identified in the use case library.
+Use Case #${matchUseCase.id}: "${matchUseCase.name}"
+Description: ${matchUseCase.description}
+If the conversation supports this, surface it naturally in your next message.
+Do not force it if the conversation has moved in a different direction.`;
+  }
+
+  return CLAIRE_SYSTEM_PROMPT
+    .replace('{DEPARTMENT}', state.department ? state.department.fn : 'General')
+    .replace('{MATCH_CONTEXT}', matchCtx);
+}
+
+/* ════════════════════════════════════════════════════
+   STREAMING
+════════════════════════════════════════════════════ */
+async function streamClaireResponse(messages, system) {
+  showTyping();
+
+  const resp = await fetch('/api/chat', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ messages, system, max_tokens: 300 }),
+  });
+
+  if (!resp.ok) {
+    hideTyping();
+    throw new Error(`HTTP ${resp.status}`);
+  }
+
+  const reader = resp.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = '';
+  let fullText = '';
+  let bubbleTextEl = null;
+  let firstToken = true;
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+
+    buffer += decoder.decode(value, { stream: true });
+    const lines = buffer.split('\n');
+    buffer = lines.pop(); // keep partial last line
+
+    for (const line of lines) {
+      if (!line.startsWith('data: ')) continue;
+      const data = line.slice(6).trim();
+      if (data === '[DONE]') continue;
+
+      try {
+        const evt = JSON.parse(data);
+        if (evt.type === 'content_block_delta' && evt.delta?.type === 'text_delta') {
+          const chunk = evt.delta.text;
+          fullText += chunk;
+
+          if (firstToken) {
+            firstToken = false;
+            hideTyping();
+            bubbleTextEl = createClaireBubble();
+          }
+          if (bubbleTextEl) {
+            bubbleTextEl.textContent += chunk;
+            scrollToBottom();
+          }
+        }
+      } catch { /* partial or irrelevant SSE event */ }
+    }
+  }
+
+  // If we never got a token (empty stream), hide typing
+  if (firstToken) hideTyping();
+
+  return fullText;
+}
+
+/* ════════════════════════════════════════════════════
+   KEYWORD MATCHING
+════════════════════════════════════════════════════ */
+function runKeywordMatch() {
+  if (!useCases.length || state.userMsgCount < 2) return { confidence: 0, useCase: null };
+
+  const userText = state.messages
+    .filter(m => m.role === 'user')
+    .map(m => m.content.toLowerCase())
+    .join(' ');
+
+  let best = { score: 0, useCase: null };
+
+  for (const uc of useCases) {
+    const matched = uc.keywords.filter(kw => userText.includes(kw.toLowerCase()));
+    let score = matched.length / uc.keywords.length;
+
+    // Boost same-department use cases
+    if (state.department && uc.function === state.department.fn) {
+      score *= DEPT_WEIGHT;
+    }
+
+    if (score > best.score) {
+      best = { score: Math.min(score, 1), useCase: uc };
+    }
+  }
+
+  return { confidence: best.score, useCase: best.useCase };
+}
+
+/* ════════════════════════════════════════════════════
+   CONFIDENCE BAR
+════════════════════════════════════════════════════ */
+function updateConfidenceBar(score) {
+  if (score < DISPLAY_THRESHOLD) return;
+
+  $confBanner.hidden = false;
+  const pct = Math.round(Math.min(score, 1) * 100);
+  $confFill.style.width = pct + '%';
+  $confPct.textContent = pct + '%';
+}
+
+/* ════════════════════════════════════════════════════
+   RENDERING — messages
+════════════════════════════════════════════════════ */
+function appendClaireMsg(text) {
+  const div = document.createElement('div');
+  div.className = 'msg msg-claire fade-up';
+  div.innerHTML = `<div class="avatar">C</div>
+    <div class="bubble bubble-claire"><span>${escHtml(text)}</span></div>`;
+  $messages.appendChild(div);
+  scrollToBottom();
+}
+
+function appendUserMsg(text) {
+  const div = document.createElement('div');
+  div.className = 'msg msg-user fade-up';
+  div.innerHTML = `<div class="bubble bubble-user">${escHtml(text)}</div>`;
+  $messages.appendChild(div);
+  scrollToBottom();
+}
+
+function createClaireBubble() {
+  const div = document.createElement('div');
+  div.className = 'msg msg-claire fade-up';
+  div.innerHTML = `<div class="avatar">C</div>
+    <div class="bubble bubble-claire"><span class="bubble-text"></span></div>`;
+  $messages.appendChild(div);
+  scrollToBottom();
+  return div.querySelector('.bubble-text');
+}
+
+function showTyping() {
+  const div = document.createElement('div');
+  div.id = 'typing-indicator';
+  div.className = 'msg msg-claire fade-up';
+  div.innerHTML = `<div class="avatar">C</div>
+    <div class="bubble bubble-claire">
+      <div class="typing-dots"><span></span><span></span><span></span></div>
+    </div>`;
+  $messages.appendChild(div);
+  scrollToBottom();
+}
+
+function hideTyping() {
+  const el = document.getElementById('typing-indicator');
+  if (el) el.remove();
+}
+
+function scrollToBottom() {
+  requestAnimationFrame(() => {
+    $messages.scrollTop = $messages.scrollHeight;
+  });
+}
+
+/* ════════════════════════════════════════════════════
+   MATCH CARD
+════════════════════════════════════════════════════ */
+function renderMatchCard(uc) {
+  const id = 'match-card-' + Date.now();
+  const wrap = document.createElement('div');
+  wrap.className = 'msg msg-special';
+  wrap.innerHTML = `
+    <div class="msg-card match-card" id="${id}">
+      <div class="card-eyebrow">Recognized pattern</div>
+      <div class="card-title">${escHtml(uc.name)}</div>
+      <div class="card-desc">${escHtml(uc.description)}</div>
+      <div class="card-actions">
+        <button class="btn-confirm" onclick="confirmMatch('${id}')">Yes, that's basically it</button>
+        <button class="btn-deny" onclick="denyMatch()">Not quite</button>
+      </div>
+      <div class="confirmed-note">Got it — putting together your brief now.</div>
+    </div>`;
+  $messages.appendChild(wrap);
+  scrollToBottom();
+}
+
+function confirmMatch(cardId) {
+  const card = document.getElementById(cardId);
+  if (card) card.classList.add('confirmed');
+  state.matchState = 'confirmed';
+  generateBrief('A');
+}
+
+function denyMatch() {
+  state.matchState = 'rejected';
+  state.matchedUseCase = null;
+  state.confidence = 0;
+  $confFill.style.width = '0%';
+  $confPct.textContent = '0%';
+
+  // Claire continues; after enough messages may re-match or go Path C
+  appendClaireMsg("Got it — what did I get wrong about your situation?");
+  state.messages.push({ role: 'assistant', content: "Got it — what did I get wrong about your situation?" });
+}
+
+/* ════════════════════════════════════════════════════
+   NEW USE CASE CARD (Path C)
+════════════════════════════════════════════════════ */
+function renderNewUseCaseCard() {
+  const wrap = document.createElement('div');
+  wrap.className = 'msg msg-special';
+  wrap.innerHTML = `
+    <div class="msg-card new-card">
+      <div class="card-eyebrow">New discovery</div>
+      <div class="card-title">This is something we haven't captured yet</div>
+      <div class="card-desc">Your situation doesn't match anything in our library — which means it's worth documenting properly. Let's make sure we capture everything.</div>
+      <div class="card-actions">
+        <button class="btn-brief" id="btn-gen-brief" onclick="generateBrief('C')">Generate brief</button>
+      </div>
+    </div>`;
+  $messages.appendChild(wrap);
+  scrollToBottom();
+}
+
+/* ════════════════════════════════════════════════════
+   PRD EXTRACTION
+════════════════════════════════════════════════════ */
+async function generateBrief(path) {
+  const briefBtn = document.getElementById('btn-gen-brief');
+  if (briefBtn) { briefBtn.disabled = true; briefBtn.textContent = 'Generating...'; }
+
+  // Build transcript
+  const transcript = state.messages
+    .map(m => `${m.role === 'user' ? 'Employee' : 'Claire'}: ${m.content}`)
+    .join('\n\n');
+
+  try {
+    const res = await fetch('/api/extract-brief', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        transcript,
+        matchedUseCaseId: state.matchedUseCase?.id || null,
+        path,
+        department: state.department?.label || null,
+      }),
+    });
+
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const brief = await res.json();
+    state.brief = brief;
+    renderPRDCard(brief, path);
+
+  } catch (err) {
+    console.error('Brief extraction error:', err);
+    const wrap = document.createElement('div');
+    wrap.className = 'msg msg-special';
+    wrap.innerHTML = `<div class="msg-card prd-card"><div style="color:var(--accent2);font-size:14px">Couldn't generate the brief right now. Your conversation has been saved — try again in a moment.</div></div>`;
+    $messages.appendChild(wrap);
+    scrollToBottom();
+  }
+}
+
+/* ════════════════════════════════════════════════════
+   PRD CARD
+════════════════════════════════════════════════════ */
+function renderPRDCard(b, path) {
+  const isKnown = b.match_type === 'known' || path === 'A';
+  const systems = Array.isArray(b.systems_involved) ? b.systems_involved : [];
+  const systemsHtml = systems.length
+    ? systems.map(s => `<span class="system-tag">${escHtml(s)}</span>`).join('')
+    : '<span style="color:var(--ink3)">—</span>';
+
+  const readinessClass = (b.readiness || 'exploratory').replace(/-/g, '_');
+  const confClass = b.confidence || 'medium';
+
+  const wrap = document.createElement('div');
+  wrap.className = 'msg msg-special';
+  wrap.innerHTML = `
+    <div class="msg-card prd-card" id="prd-card">
+      <div class="card-eyebrow">
+        <span class="prd-ref">${escHtml(b.brief_ref || 'AGT-XXXX')}</span>
+        <span class="prd-tag ${isKnown ? 'known' : 'new'}">${isKnown ? 'Known use case' : 'New use case'}</span>
+      </div>
+      <div class="prd-fields">
+        <div class="prd-field">
+          <span class="field-label">Pain point</span>
+          <span class="field-val">${escHtml(b.pain_summary || '—')}</span>
+        </div>
+        <div class="prd-field">
+          <span class="field-label">Frequency</span>
+          <span class="field-val">${escHtml(b.frequency || '—')}</span>
+        </div>
+        <div class="prd-field">
+          <span class="field-label">Systems</span>
+          <span class="field-val systems">${systemsHtml}</span>
+        </div>
+        <div class="prd-field">
+          <span class="field-label">Affected</span>
+          <span class="field-val">${escHtml(b.people_affected || '—')}</span>
+        </div>
+        <div class="prd-field">
+          <span class="field-label">Time cost</span>
+          <span class="field-val">${escHtml(b.time_impact || '—')}</span>
+        </div>
+        <div class="prd-field">
+          <span class="field-label">Success</span>
+          <span class="field-val">${escHtml(b.success_criteria || '—')}</span>
+        </div>
+      </div>
+      <hr class="prd-divider">
+      <div class="prd-meta-row">
+        <span class="meta-badge ${readinessClass}">${(b.readiness || 'exploratory').replace(/_/g, ' ')}</span>
+        <span class="meta-badge ${confClass}">${confClass} confidence</span>
+      </div>
+      <div class="prd-actions">
+        <button class="btn-copy" id="btn-copy-brief" onclick="copyBrief()">Copy brief</button>
+        <button class="btn-submit-brief" id="btn-submit-brief" onclick="submitBrief()">Submit to team</button>
+      </div>
+    </div>`;
+  $messages.appendChild(wrap);
+  scrollToBottom();
+
+  // Add Claire's closing message
+  setTimeout(() => {
+    const closing = "I think that covers it — the team will take a look and follow up with you within the week.";
+    appendClaireMsg(closing);
+    state.messages.push({ role: 'assistant', content: closing });
+    if (state.voiceOutputOn) speakText(closing);
+  }, 600);
+}
+
+function copyBrief() {
+  if (!state.brief) return;
+  const b = state.brief;
+  const systems = Array.isArray(b.systems_involved) ? b.systems_involved.join(', ') : '—';
+  const text = [
+    `AGENT BRIEF ${b.brief_ref}`,
+    `Department: ${b.department || '—'}`,
+    ``,
+    `PAIN POINT`,
+    b.pain_summary || '—',
+    ``,
+    `Frequency: ${b.frequency || '—'}`,
+    `Systems: ${systems}`,
+    `Affected: ${b.people_affected || '—'}`,
+    `Time cost: ${b.time_impact || '—'}`,
+    ``,
+    `SUCCESS CRITERIA`,
+    b.success_criteria || '—',
+    ``,
+    `Type: ${b.match_type === 'known' ? 'Known use case' : 'New use case'}`,
+    `Readiness: ${b.readiness || '—'}`,
+    `Confidence: ${b.confidence || '—'}`,
+  ].join('\n');
+
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = document.getElementById('btn-copy-brief');
+    if (btn) { btn.textContent = 'Copied!'; btn.classList.add('copied'); }
+  }).catch(() => {
+    // Fallback for unsupported environments
+    const btn = document.getElementById('btn-copy-brief');
+    if (btn) btn.textContent = 'Copy failed';
+  });
+}
+
+function submitBrief() {
+  const btn = document.getElementById('btn-submit-brief');
+  if (!btn || btn.classList.contains('submitted')) return;
+  btn.classList.add('submitted');
+  btn.textContent = 'Submitted';
+  // In production: fire Slack webhook via Netlify function
+  console.log('Brief submitted:', state.brief);
+}
+
+/* ════════════════════════════════════════════════════
+   VOICE INPUT
+════════════════════════════════════════════════════ */
+function initVoice() {
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) {
+    $voiceCheck.checked = false;
+    $voiceCheck.disabled = true;
+    $voiceRow.style.opacity = '0.4';
+    $voiceRow.title = 'Voice input is not supported in this browser';
+    return;
+  }
+
+  recognition = new SR();
+  recognition.continuous = false;
+  recognition.interimResults = true;
+  recognition.lang = 'en-US';
+
+  recognition.onresult = e => {
+    const transcript = Array.from(e.results).map(r => r[0].transcript).join('');
+    $input.value = transcript;
+    autoResize($input);
+
+    if (e.results[e.results.length - 1].isFinal) {
+      stopListening();
+      handleSend();
+    }
+  };
+
+  recognition.onend = () => {
+    if (state.isListening) stopListening();
+  };
+
+  recognition.onerror = e => {
+    console.warn('Speech recognition error:', e.error);
+    stopListening();
+  };
+
+  // Show mic only if voice input is enabled
+  $voiceCheck.addEventListener('change', () => {
+    if ($btnMic && !$btnMic.hidden) {
+      $btnMic.hidden = !$voiceCheck.checked;
+    }
+  });
+}
+
+function toggleListening() {
+  if (state.isListening) stopListening();
+  else startListening();
+}
+
+function startListening() {
+  if (!recognition || state.isThinking) return;
+  state.isListening = true;
+  $btnMic.classList.add('listening');
+  $listenStatus.hidden = false;
+  $input.value = '';
+  $input.placeholder = 'Listening...';
+  try { recognition.start(); } catch { stopListening(); }
+}
+
+function stopListening() {
+  state.isListening = false;
+  $btnMic.classList.remove('listening');
+  $listenStatus.hidden = true;
+  $input.placeholder = 'Tell Claire what\'s on your mind...';
+  try { recognition.stop(); } catch {}
+}
+
+/* ════════════════════════════════════════════════════
+   VOICE OUTPUT
+════════════════════════════════════════════════════ */
+function toggleVoiceOut() {
+  state.voiceOutputOn = !state.voiceOutputOn;
+  $btnVoiceOut.innerHTML = state.voiceOutputOn ? SPEAKER_ON_SVG : SPEAKER_OFF_SVG;
+  $btnVoiceOut.classList.toggle('active', state.voiceOutputOn);
+  if (!state.voiceOutputOn) window.speechSynthesis?.cancel();
+}
+
+function speakText(text) {
+  if (!state.voiceOutputOn || !window.speechSynthesis) return;
+  window.speechSynthesis.cancel();
+
+  const utt = new SpeechSynthesisUtterance(text);
+  utt.rate = 0.92;
+  utt.pitch = 1.05;
+
+  const trySpeak = () => {
+    const voices = window.speechSynthesis.getVoices();
+    const preferred = voices.find(v =>
+      v.name === 'Samantha' ||
+      v.name === 'Karen' ||
+      v.name === 'Victoria' ||
+      v.name.includes('Samantha') ||
+      (v.lang.startsWith('en') && v.name.toLowerCase().includes('female'))
+    ) || voices.find(v => v.lang.startsWith('en-')) || null;
+    if (preferred) utt.voice = preferred;
+    window.speechSynthesis.speak(utt);
+  };
+
+  if (window.speechSynthesis.getVoices().length) {
+    trySpeak();
+  } else {
+    window.speechSynthesis.onvoiceschanged = trySpeak;
+  }
+}
+
+/* ════════════════════════════════════════════════════
+   UTILITIES
+════════════════════════════════════════════════════ */
+function autoResize(el) {
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 120) + 'px';
+}
+
+function escHtml(str) {
+  if (!str) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+function resetToWelcome() {
+  // Cancel speech
+  window.speechSynthesis?.cancel();
+  if (state.isListening) stopListening();
+
+  // Reset state
+  Object.assign(state, {
+    department: null, messages: [], userMsgCount: 0,
+    confidence: 0, matchedUseCase: null, matchState: 'none',
+    isThinking: false, brief: null,
+  });
+
+  // Clear UI
+  $messages.innerHTML = '';
+  $input.value = '';
+  $confBanner.hidden = true;
+  $confFill.style.width = '0%';
+  document.querySelectorAll('.chip').forEach(c => c.classList.remove('selected'));
+  $ctaBtn.disabled = true;
+
+  // Switch screens
+  $chat.hidden = true;
+  $welcome.hidden = false;
+}
+
+/* ════════════════════════════════════════════════════
+   BOOT
+════════════════════════════════════════════════════ */
+document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>

@@ -1,0 +1,23 @@
+[build]
+  publish = "."
+  functions = "netlify/functions"
+
+[[edge_functions]]
+  path = "/api/chat"
+  function = "chat"
+
+[[redirects]]
+  from = "/api/extract-brief"
+  to = "/.netlify/functions/extract-brief"
+  status = 200
+
+[[headers]]
+  for = "/use-cases.json"
+  [headers.values]
+    Cache-Control = "public, max-age=3600"
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-Content-Type-Options = "nosniff"
