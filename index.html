@@ -1043,16 +1043,21 @@ async function init() {
   // ── Init Supabase (if configured) ─────────────────
   const cfg = config.value;
   if (cfg?.supabaseUrl && cfg?.supabaseAnonKey && window.supabase) {
-    supabase = window.supabase.createClient(cfg.supabaseUrl, cfg.supabaseAnonKey);
+    try {
+      supabase = window.supabase.createClient(cfg.supabaseUrl, cfg.supabaseAnonKey);
 
-    // React to auth state changes (OAuth redirect lands here)
-    supabase.auth.onAuthStateChange(handleAuthChange);
+      // React to auth state changes (OAuth redirect lands here)
+      supabase.auth.onAuthStateChange(handleAuthChange);
 
-    // Check for existing session
-    const { data: { session } } = await supabase.auth.getSession();
-    if (session) {
-      await handleAuthChange('SIGNED_IN', session);
-    } else {
+      // Check for existing session
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        await handleAuthChange('SIGNED_IN', session);
+      } else {
+        showAuthScreen();
+      }
+    } catch (e) {
+      console.error('Supabase init error:', e);
       showAuthScreen();
     }
   } else {
@@ -1114,7 +1119,11 @@ function showWelcomeScreen() {
 }
 
 async function signInWithGoogle() {
-  if (!supabase) return;
+  if (!supabase) {
+    $authStatus.textContent = 'Auth not configured — check environment variables.';
+    $authStatus.className = 'auth-status error';
+    return;
+  }
   $authStatus.textContent = 'Redirecting to Google…';
   $authStatus.className = 'auth-status';
   const { error } = await supabase.auth.signInWithOAuth({
