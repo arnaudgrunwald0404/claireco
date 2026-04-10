@@ -1,0 +1,1 @@
+- https://njkpuggwurbieturzrel.supabase.co/auth/v1/callback
