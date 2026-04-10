@@ -7,6 +7,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,600;1,400&family=IBM+Plex+Sans:wght@300;400;500&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <!-- Supabase JS (UMD build — no bundler needed) -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
   <style>
     /* ── Design System ────────────────────────────────── */
     :root {
@@ -716,6 +718,72 @@
       animation: dot 1.2s ease infinite;
     }
 
+    /* ════════════════════════════════════════════════════
+       AUTH SCREEN
+    ════════════════════════════════════════════════════ */
+    #screen-auth {
+      justify-content: center;
+      align-items: center;
+      padding: 40px 24px;
+    }
+    .auth-wrap {
+      width: 100%;
+      max-width: 400px;
+      margin: 0 auto;
+      text-align: center;
+      animation: fadeUp 0.5s ease both;
+    }
+    .auth-logo {
+      font-family: var(--font-display);
+      font-size: 28px;
+      font-weight: 600;
+      color: var(--ink);
+      margin-bottom: 40px;
+    }
+    .auth-logo em { color: var(--ink3); font-style: normal; }
+    .auth-headline {
+      font-family: var(--font-display);
+      font-size: clamp(28px, 5vw, 38px);
+      font-weight: 600;
+      line-height: 1.2;
+      margin-bottom: 12px;
+    }
+    .auth-sub {
+      font-size: 15px;
+      color: var(--ink2);
+      font-weight: 300;
+      margin-bottom: 40px;
+      line-height: 1.6;
+    }
+    .btn-google {
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 14px 28px;
+      font-size: 15px;
+      font-weight: 500;
+      color: var(--ink);
+      cursor: pointer;
+      transition: background 0.15s, border-color 0.15s, transform 0.15s;
+      margin-bottom: 20px;
+    }
+    .btn-google:hover {
+      background: var(--surface2);
+      border-color: var(--ink3);
+      transform: translateY(-1px);
+    }
+    .btn-google svg { flex-shrink: 0; }
+    .auth-status {
+      font-size: 13px;
+      color: var(--ink3);
+      font-family: var(--font-mono);
+      min-height: 20px;
+    }
+    .auth-status.error { color: var(--accent2); }
+
     /* ── Responsive ────────────────────────────────── */
     @media (max-width: 600px) {
       #screen-welcome { padding: 32px 20px 48px; }
@@ -729,9 +797,30 @@
 <body>
 
 <!-- ═══════════════════════════════════════════════════
+     AUTH SCREEN
+════════════════════════════════════════════════════ -->
+<div id="screen-auth" class="screen">
+  <div class="auth-wrap">
+    <div class="auth-logo">claire<em>co</em></div>
+    <h1 class="auth-headline">Sign in to get started.</h1>
+    <p class="auth-sub">Use your ClearCompany Google account — no new password needed.</p>
+    <button class="btn-google" id="btn-google">
+      <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true">
+        <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+        <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+        <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/>
+        <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+      </svg>
+      Continue with Google
+    </button>
+    <div class="auth-status" id="auth-status"></div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════
      WELCOME SCREEN
 ════════════════════════════════════════════════════ -->
-<div id="screen-welcome" class="screen">
+<div id="screen-welcome" class="screen" hidden>
   <div class="welcome-wrap">
 
     <div class="logo">claire<em>co</em></div>
@@ -895,6 +984,11 @@ const DEPARTMENTS = [
    STATE
 ════════════════════════════════════════════════════ */
 const state = {
+  // Auth
+  userId:         null,   // Supabase auth user id
+  userEmail:      null,
+  // Conversation
+  conversationId: null,   // Supabase conversations.id
   department: null,         // { label, fn }
   messages: [],             // { role: 'user'|'assistant', content }
   userMsgCount: 0,
@@ -910,10 +1004,14 @@ const state = {
 
 let useCases = [];
 let recognition = null;
+let supabase = null; // initialized after fetching /api/config
 
 /* ════════════════════════════════════════════════════
    DOM REFS
 ════════════════════════════════════════════════════ */
+const $authScreen  = document.getElementById('screen-auth');
+const $btnGoogle   = document.getElementById('btn-google');
+const $authStatus  = document.getElementById('auth-status');
 const $welcome     = document.getElementById('screen-welcome');
 const $chat        = document.getElementById('screen-chat');
 const $deptChips   = document.getElementById('dept-chips');
@@ -936,15 +1034,34 @@ const $listenStatus = document.getElementById('listen-status');
    INIT
 ════════════════════════════════════════════════════ */
 async function init() {
-  // Load use cases
-  try {
-    const res = await fetch('/use-cases.json');
-    useCases = await res.json();
-  } catch (e) {
-    console.warn('Could not load use-cases.json:', e);
+  // ── Load static assets in parallel ───────────────
+  const [, config] = await Promise.allSettled([
+    fetch('/use-cases.json').then(r => r.json()).then(d => { useCases = d; }),
+    fetch('/api/config').then(r => r.json()).catch(() => null),
+  ]);
+
+  // ── Init Supabase (if configured) ─────────────────
+  const cfg = config.value;
+  if (cfg?.supabaseUrl && cfg?.supabaseAnonKey && window.supabase) {
+    supabase = window.supabase.createClient(cfg.supabaseUrl, cfg.supabaseAnonKey);
+
+    // React to auth state changes (OAuth redirect lands here)
+    supabase.auth.onAuthStateChange(handleAuthChange);
+
+    // Check for existing session
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session) {
+      await handleAuthChange('SIGNED_IN', session);
+    } else {
+      showAuthScreen();
+    }
+  } else {
+    // Supabase not configured — skip auth, go straight to welcome
+    console.info('Supabase not configured — running without persistence.');
+    showWelcomeScreen();
   }
 
-  // Build department chips
+  // ── Build department chips ────────────────────────
   DEPARTMENTS.forEach(dept => {
     const btn = document.createElement('button');
     btn.className = 'chip';
@@ -953,10 +1070,10 @@ async function init() {
     $deptChips.appendChild(btn);
   });
 
-  // Voice availability
+  // ── Voice ─────────────────────────────────────────
   initVoice();
 
-  // Input events
+  // ── Input events ──────────────────────────────────
   $input.addEventListener('input', () => {
     autoResize($input);
     $btnSend.disabled = !$input.value.trim() || state.isThinking;
@@ -969,6 +1086,89 @@ async function init() {
   $btnReset.addEventListener('click', resetToWelcome);
   $btnVoiceOut.addEventListener('click', toggleVoiceOut);
   $ctaBtn.addEventListener('click', startConversation);
+
+  // ── Auth screen button ────────────────────────────
+  $btnGoogle.addEventListener('click', signInWithGoogle);
+
+  // ── Save on tab close ─────────────────────────────
+  window.addEventListener('beforeunload', () => {
+    if (state.conversationId && state.matchState !== 'confirmed') {
+      persistDB('conversations', { status: 'abandoned' }, state.conversationId);
+    }
+  });
+}
+
+/* ════════════════════════════════════════════════════
+   AUTH
+════════════════════════════════════════════════════ */
+function showAuthScreen() {
+  $authScreen.hidden = false;
+  $welcome.hidden = true;
+  $chat.hidden = true;
+}
+
+function showWelcomeScreen() {
+  $authScreen.hidden = true;
+  $welcome.hidden = false;
+  $chat.hidden = true;
+}
+
+async function signInWithGoogle() {
+  if (!supabase) return;
+  $authStatus.textContent = 'Redirecting to Google…';
+  $authStatus.className = 'auth-status';
+  const { error } = await supabase.auth.signInWithOAuth({
+    provider: 'google',
+    options: { redirectTo: window.location.origin },
+  });
+  if (error) {
+    $authStatus.textContent = error.message;
+    $authStatus.className = 'auth-status error';
+  }
+}
+
+async function handleAuthChange(event, session) {
+  if (event === 'SIGNED_IN' && session) {
+    state.userId    = session.user.id;
+    state.userEmail = session.user.email;
+
+    // Upsert profile (fire-and-forget)
+    if (supabase) {
+      supabase.from('profiles').upsert({
+        id:        session.user.id,
+        email:     session.user.email,
+        full_name: session.user.user_metadata?.full_name || null,
+      }, { onConflict: 'id' }).then(({ error }) => {
+        if (error) console.warn('Profile upsert error:', error.message);
+      });
+    }
+
+    showWelcomeScreen();
+  } else if (event === 'SIGNED_OUT') {
+    state.userId = null;
+    state.userEmail = null;
+    showAuthScreen();
+  }
+}
+
+/* ════════════════════════════════════════════════════
+   SUPABASE HELPERS
+════════════════════════════════════════════════════ */
+// Fire-and-forget update for a single table row
+function persistDB(table, updates, id) {
+  if (!supabase) return;
+  supabase.from(table).update(updates).eq('id', id)
+    .then(({ error }) => { if (error) console.warn(`DB update ${table}:`, error.message); });
+}
+
+// Fire-and-forget insert
+function insertDB(table, row) {
+  if (!supabase) return Promise.resolve(null);
+  return supabase.from(table).insert(row).select('id').single()
+    .then(({ data, error }) => {
+      if (error) { console.warn(`DB insert ${table}:`, error.message); return null; }
+      return data;
+    });
 }
 
 /* ════════════════════════════════════════════════════
@@ -996,6 +1196,19 @@ async function startConversation() {
 
   // Show mic if available
   if (recognition) $btnMic.hidden = false;
+
+  // Create conversation row in Supabase (fire-and-forget)
+  insertDB('conversations', {
+    user_id:       state.userId || null,
+    department:    state.department.label,
+    status:        'in_progress',
+    message_count: 0,
+    transcript:    [],
+    device:        window.innerWidth < 768 ? 'mobile' : 'desktop',
+    started_at:    new Date().toISOString(),
+  }).then(data => {
+    if (data?.id) state.conversationId = data.id;
+  });
 
   // Opening message from Claire (random)
   const opening = OPENING_LINES[Math.floor(Math.random() * OPENING_LINES.length)];
@@ -1049,6 +1262,19 @@ async function handleSend() {
     if (clairesText) {
       state.messages.push({ role: 'assistant', content: clairesText });
       if (state.voiceOutputOn) speakText(clairesText);
+    }
+
+    // Persist transcript turn-by-turn (fire-and-forget)
+    if (state.conversationId) {
+      persistDB('conversations', {
+        transcript:         state.messages.map(m => ({
+                              role: m.role, content: m.content,
+                              timestamp: new Date().toISOString(),
+                            })),
+        message_count:      state.messages.length,
+        match_confidence:   state.confidence || null,
+        matched_use_case_id: state.matchedUseCase?.id || null,
+      }, state.conversationId);
     }
 
     // Show match card after Claire responds
@@ -1330,7 +1556,9 @@ async function generateBrief(path) {
         transcript,
         matchedUseCaseId: state.matchedUseCase?.id || null,
         path,
-        department: state.department?.label || null,
+        department:     state.department?.label || null,
+        conversationId: state.conversationId    || null,
+        userId:         state.userId            || null,
       }),
     });
 
@@ -1452,13 +1680,26 @@ function copyBrief() {
   });
 }
 
-function submitBrief() {
+async function submitBrief() {
   const btn = document.getElementById('btn-submit-brief');
   if (!btn || btn.classList.contains('submitted')) return;
+
+  btn.textContent = 'Submitting…';
+  btn.disabled = true;
+
+  try {
+    await fetch('/api/notify-slack', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ brief: state.brief }),
+    });
+  } catch (err) {
+    console.warn('Slack notification failed (non-fatal):', err);
+  }
+
   btn.classList.add('submitted');
   btn.textContent = 'Submitted';
-  // In production: fire Slack webhook via Netlify function
-  console.log('Brief submitted:', state.brief);
+  btn.disabled = false;
 }
 
 /* ════════════════════════════════════════════════════
@@ -1590,8 +1831,14 @@ function resetToWelcome() {
   window.speechSynthesis?.cancel();
   if (state.isListening) stopListening();
 
+  // Mark conversation abandoned if not already completed
+  if (state.conversationId && state.matchState !== 'confirmed') {
+    persistDB('conversations', { status: 'abandoned' }, state.conversationId);
+  }
+
   // Reset state
   Object.assign(state, {
+    conversationId: null,
     department: null, messages: [], userMsgCount: 0,
     confidence: 0, matchedUseCase: null, matchState: 'none',
     isThinking: false, brief: null,

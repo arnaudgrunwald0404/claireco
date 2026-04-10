@@ -11,6 +11,16 @@
   to = "/.netlify/functions/extract-brief"
   status = 200
 
+[[redirects]]
+  from = "/api/config"
+  to = "/.netlify/functions/config"
+  status = 200
+
+[[redirects]]
+  from = "/api/notify-slack"
+  to = "/.netlify/functions/notify-slack"
+  status = 200
+
 [[headers]]
   for = "/use-cases.json"
   [headers.values]
