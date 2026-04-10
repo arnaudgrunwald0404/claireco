@@ -1,41 +1,60 @@
-import { createZapierSdk } from "@zapier/zapier-sdk";
+import readline from "readline";
+import { ClireAgent } from "./agent.js";
+import { getProfile } from "./zapier.js";
 
 async function main() {
-  // Create the SDK client.
-  // By default it reads credentials from a prior `npx zapier-sdk login`,
-  // or you can pass credentials explicitly:
-  //   createZapierSdk({ credentials: process.env.ZAPIER_CREDENTIALS })
-  //   createZapierSdk({ credentials: { clientId: "...", clientSecret: "..." } })
-  const zapier = createZapierSdk();
+  console.log("ClireC0 — AI-powered Zapier automation CLI");
+  console.log("============================================");
 
-  // 1. Show who's logged in
-  const { data: profile } = await zapier.getProfile();
-  console.log(`Logged in as: ${profile.email}\n`);
-
-  // 2. List connected apps
-  console.log("Your connections:");
-  const { data: connections } = await zapier.listConnections({ owner: "me" });
-  for (const conn of connections) {
-    console.log(`  - ${conn.title ?? conn.app_key} (ID: ${conn.id}, expired: ${conn.is_expired})`);
+  try {
+    const email = await getProfile();
+    console.log(`Logged in as: ${email}\n`);
+  } catch {
+    console.warn("Could not fetch profile. Check your Zapier credentials.\n");
   }
 
-  // 3. List available actions for an app (example: Slack)
-  console.log("\nSlack actions:");
-  const { data: actions } = await zapier.listActions({ app: "slack" });
-  for (const action of actions) {
-    console.log(`  [${action.type}] ${action.key} — ${action.title}`);
-  }
+  const agent = new ClireAgent();
 
-  // 4. Run an action — read Slack channels
-  //    Replace the connection ID with your own Slack connection ID.
-  // const { data: channels } = await zapier.runAction({
-  //   app: "slack",
-  //   actionType: "read",
-  //   action: "channels",
-  //   connection: "<YOUR_SLACK_CONNECTION_ID>",
-  //   inputs: {},
-  // });
-  // console.log("\nSlack channels:", channels);
+  const rl = readline.createInterface({
+    input: process.stdin,
+    output: process.stdout,
+    prompt: "You> ",
+  });
+
+  console.log('Type a command (e.g. "list my connections", "send a Slack message") or "exit" to quit.\n');
+
+  rl.prompt();
+
+  rl.on("line", async (line) => {
+    const input = line.trim();
+
+    if (!input) {
+      rl.prompt();
+      return;
+    }
+
+    if (input.toLowerCase() === "exit" || input.toLowerCase() === "quit") {
+      console.log("Goodbye!");
+      rl.close();
+      process.exit(0);
+    }
+
+    if (input.toLowerCase() === "reset") {
+      agent.reset();
+      console.log("Conversation reset.\n");
+      rl.prompt();
+      return;
+    }
+
+    try {
+      const response = await agent.chat(input);
+      console.log(`\nClireC0> ${response}\n`);
+    } catch (err) {
+      console.error(`Error: ${err instanceof Error ? err.message : String(err)}\n`);
+    }
+
+    rl.prompt();
+  });
 }
 
 main().catch(console.error);
