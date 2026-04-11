@@ -1004,7 +1004,7 @@ const state = {
 
 let useCases = [];
 let recognition = null;
-let supabase = null; // initialized after fetching /api/config
+let sbClient = null; // initialized after fetching /api/config
 
 /* ════════════════════════════════════════════════════
    DOM REFS
@@ -1044,13 +1044,13 @@ async function init() {
   const cfg = config.value;
   if (cfg?.supabaseUrl && cfg?.supabaseAnonKey && window.supabase) {
     try {
-      supabase = window.supabase.createClient(cfg.supabaseUrl, cfg.supabaseAnonKey);
+      sbClient = window.supabase.createClient(cfg.supabaseUrl, cfg.supabaseAnonKey);
 
       // React to auth state changes (OAuth redirect lands here)
-      supabase.auth.onAuthStateChange(handleAuthChange);
+      sbClient.auth.onAuthStateChange(handleAuthChange);
 
       // Check for existing session
-      const { data: { session } } = await supabase.auth.getSession();
+      const { data: { session } } = await sbClient.auth.getSession();
       if (session) {
         await handleAuthChange('SIGNED_IN', session);
       } else {
@@ -1119,14 +1119,14 @@ function showWelcomeScreen() {
 }
 
 async function signInWithGoogle() {
-  if (!supabase) {
+  if (!sbClient) {
     $authStatus.textContent = 'Auth not configured — check environment variables.';
     $authStatus.className = 'auth-status error';
     return;
   }
   $authStatus.textContent = 'Redirecting to Google…';
   $authStatus.className = 'auth-status';
-  const { error } = await supabase.auth.signInWithOAuth({
+  const { error } = await sbClient.auth.signInWithOAuth({
     provider: 'google',
     options: { redirectTo: window.location.origin },
   });
@@ -1142,8 +1142,8 @@ async function handleAuthChange(event, session) {
     state.userEmail = session.user.email;
 
     // Upsert profile (fire-and-forget)
-    if (supabase) {
-      supabase.from('profiles').upsert({
+    if (sbClient) {
+      sbClient.from('profiles').upsert({
         id:        session.user.id,
         email:     session.user.email,
         full_name: session.user.user_metadata?.full_name || null,
@@ -1165,15 +1165,15 @@ async function handleAuthChange(event, session) {
 ════════════════════════════════════════════════════ */
 // Fire-and-forget update for a single table row
 function persistDB(table, updates, id) {
-  if (!supabase) return;
-  supabase.from(table).update(updates).eq('id', id)
+  if (!sbClient) return;
+  sbClient.from(table).update(updates).eq('id', id)
     .then(({ error }) => { if (error) console.warn(`DB update ${table}:`, error.message); });
 }
 
 // Fire-and-forget insert
 function insertDB(table, row) {
-  if (!supabase) return Promise.resolve(null);
-  return supabase.from(table).insert(row).select('id').single()
+  if (!sbClient) return Promise.resolve(null);
+  return sbClient.from(table).insert(row).select('id').single()
     .then(({ data, error }) => {
       if (error) { console.warn(`DB insert ${table}:`, error.message); return null; }
       return data;
